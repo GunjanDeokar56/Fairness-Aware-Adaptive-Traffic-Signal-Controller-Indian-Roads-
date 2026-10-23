@@ -1,0 +1,6 @@
+{
+  "name": "Fairness-Aware Adaptive Traffic Signal Controller (Indian Roads)",
+  "description": "AI-based adaptive traffic signal management system for urban Indian roads balancing throughput and waiting-time fairness with heterogeneous vehicle PCU estimation and emission analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
