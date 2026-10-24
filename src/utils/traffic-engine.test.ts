@@ -150,6 +150,29 @@ test('generateTelemetryCSV produces valid structured CSV format', () => {
       co2EmittedKg: 0.12,
       fuelCostINR: 5.1,
     },
+    events: [
+      {
+        id: 'evt-1',
+        simTimeSeconds: 12.5,
+        wallClockTime: '10:30:15',
+        category: 'STARVATION_BREACH' as const,
+        severity: 'warning' as const,
+        approach: 'East' as const,
+        title: 'Starvation Alert: East Approach',
+        details: 'Queue wait exceeded acceptable threshold',
+        metricValue: '45s Wait',
+      },
+      {
+        id: 'evt-2',
+        simTimeSeconds: 25.0,
+        wallClockTime: '10:30:28',
+        category: 'PHASE_CHANGE' as const,
+        severity: 'info' as const,
+        title: 'Phase Transition to EW Green',
+        details: 'Adaptive controller switched phase',
+        metricValue: '28s Green',
+      },
+    ],
   };
 
   const result = generateTelemetryCSV(sampleData);
@@ -160,4 +183,11 @@ test('generateTelemetryCSV produces valid structured CSV format', () => {
   assert.ok(result.includes('v-102,East'));
   assert.ok(result.includes('Two-Wheeler'));
   assert.ok(result.includes('Auto-Rickshaw'));
+
+  // Verify Event Log Section
+  assert.ok(result.includes('# 4. SIMULATION EVENT LOG & THRESHOLD BREACHES'));
+  assert.ok(result.includes('EVENT_ID,WALL_CLOCK_TIME,SIMULATION_SECONDS,CATEGORY,SEVERITY,APPROACH,TITLE,DETAILS,METRIC_VALUE'));
+  assert.ok(result.includes('evt-1,10:30:15,12.5,STARVATION_BREACH,warning,East'));
+  assert.ok(result.includes('"Starvation Alert: East Approach"'));
+  assert.ok(result.includes('evt-2,10:30:28,25.0,PHASE_CHANGE,info,ALL'));
 });

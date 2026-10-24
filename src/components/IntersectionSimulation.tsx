@@ -266,6 +266,7 @@ export const IntersectionSimulation: React.FC<IntersectionSimulationProps> = ({
       },
       vehicles: currentVehicles,
       emissions,
+      events: eventsRef.current,
     };
 
     const csvContent = generateTelemetryCSV(snapshotData);
@@ -273,7 +274,7 @@ export const IntersectionSimulation: React.FC<IntersectionSimulationProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `traffic_telemetry_${currentScenarioRef.current.id}_${Date.now()}.csv`);
+    link.setAttribute('download', `traffic_telemetry_and_events_${currentScenarioRef.current.id}_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -782,15 +783,16 @@ export const IntersectionSimulation: React.FC<IntersectionSimulationProps> = ({
               <option value="4">4x Ultra</option>
             </select>
 
-            {/* Export CSV Download Button in Top Ribbon */}
+            {/* Export Telemetry & Event Log CSV Download Button in Top Ribbon */}
             <button
               onClick={exportSimulationCSV}
-              className="px-2.5 py-1.5 bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
-              title="Download structured CSV of simulation metrics, queues and active vehicle inventory"
-              aria-label="Export Simulation Telemetry CSV"
+              className="px-3 py-1.5 bg-emerald-600/25 hover:bg-emerald-600 border border-emerald-500/60 text-emerald-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition hover:shadow-emerald-900/50"
+              title="Download structured CSV of simulation metrics, queues, active vehicles, and event logs"
+              aria-label="Export Simulation Telemetry and Event Log CSV"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Export CSV</span>
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Export Telemetry &amp; Log (CSV)</span>
+              <span className="sm:hidden">CSV</span>
             </button>
           </div>
         </div>
@@ -899,6 +901,28 @@ export const IntersectionSimulation: React.FC<IntersectionSimulationProps> = ({
             <div className="mt-2 text-[11px] text-slate-400 leading-relaxed">
               {TRAFFIC_SCENARIOS[scenarioKey].descriptionIndianContext}
             </div>
+          </div>
+
+          {/* Quick Simulation Data & Event Log Export Card */}
+          <div className="bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-3.5 shadow-md flex items-center justify-between gap-3 transition">
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-white flex items-center gap-1.5 truncate">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Simulation Data Export</span>
+              </div>
+              <div className="text-[10px] text-slate-400 truncate">
+                Full IRC telemetry, queues & event log
+              </div>
+            </div>
+            <button
+              onClick={exportSimulationCSV}
+              className="shrink-0 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition active:scale-95"
+              title="Export complete simulation telemetry and event log to CSV"
+              aria-label="Download Full Simulation CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export CSV</span>
+            </button>
           </div>
 
           {/* 4 Approach Queue Cards */}

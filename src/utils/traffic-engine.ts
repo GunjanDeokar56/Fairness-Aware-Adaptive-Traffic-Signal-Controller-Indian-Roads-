@@ -314,28 +314,30 @@ export interface SimulationSnapshotData {
   };
   vehicles: SimVehicle[];
   emissions: EmissionMetrics;
+  events?: TrafficEventLog[];
 }
 
 /**
- * Generate structured CSV file content from simulation telemetry
+ * Generate structured CSV file content from simulation telemetry and event log
  */
 export function generateTelemetryCSV(data: SimulationSnapshotData): string {
   const lines: string[] = [];
 
   // Header / Meta Section
-  lines.push('# URBAN INDIAN ROAD TRAFFIC MANAGEMENT SYSTEM - TELEMETRY EXPORT');
+  lines.push('# URBAN INDIAN ROAD TRAFFIC MANAGEMENT SYSTEM - TELEMETRY & EVENT LOG EXPORT');
   lines.push('# Standard: IRC: 106-1990 (Passenger Car Unit Equivalence)');
   lines.push(`# Export Timestamp: ${data.timestamp}`);
   lines.push('');
 
   // 1. Controller & Simulation Global State
+  lines.push('# 1. CONTROLLER & SYSTEM STATE');
   lines.push('METRIC,VALUE,UNIT');
   lines.push(`Scenario,"${data.scenarioName}",-`);
   lines.push(`Controller Mode,${data.controllerMode},-`);
   lines.push(`Current Signal Phase,${data.currentPhase},-`);
   lines.push(`Phase Time Remaining,${data.phaseTimeRemaining},seconds`);
   lines.push(`Allocated Green Time,${data.allocatedGreenTime},seconds`);
-  lines.push(`Jain's Fairness Index,${(data.jainsFairnessIndex * 100).toFixed(2)},%`);
+  lines.push(`Jain\'s Fairness Index,${(data.jainsFairnessIndex * 100).toFixed(2)},%`);
   lines.push(`Throughput (Crossed Vehicles),${data.throughputCrossed},vehicles`);
   lines.push(`Alpha (Demand Weight),${data.alphaDemandWeight},-`);
   lines.push(`Beta (Fairness Weight),${data.betaFairnessWeight},-`);
@@ -346,6 +348,7 @@ export function generateTelemetryCSV(data: SimulationSnapshotData): string {
   lines.push('');
 
   // 2. Approach Level Breakdown
+  lines.push('# 2. APPROACH-LEVEL TELEMETRY BREAKDOWN');
   lines.push('APPROACH_DIRECTION,QUEUED_VEHICLES,TOTAL_PCU,MAX_WAIT_SECONDS,AVG_WAIT_SECONDS,EMERGENCY_ACTIVE');
   (['North', 'South', 'East', 'West'] as ApproachDirection[]).forEach((dir) => {
     const arm = data.armTelemetry[dir];
@@ -355,6 +358,7 @@ export function generateTelemetryCSV(data: SimulationSnapshotData): string {
   lines.push('');
 
   // 3. Granular Vehicle Roster
+  lines.push('# 3. ACTIVE VEHICLE INVENTORY');
   lines.push('VEHICLE_ID,APPROACH,VEHICLE_TYPE,IRC_PCU,WAITING_TIME_SEC,CURRENT_SPEED_MPS,DISTANCE_TO_STOPLINE_METERS,LANE,IS_EMERGENCY,HAS_CROSSED');
   data.vehicles.forEach((v) => {
     const def = INDIAN_VEHICLE_CONFIG[v.type];
@@ -363,6 +367,22 @@ export function generateTelemetryCSV(data: SimulationSnapshotData): string {
       `${v.id},${v.approach},"${def ? def.name : v.type}",${pcu},${v.waitingTime.toFixed(1)},${v.speed.toFixed(2)},${v.position.toFixed(2)},Lane ${v.lane + 1},${v.isEmergency ? 'YES' : 'NO'},${v.hasCrossed ? 'YES' : 'NO'}`
     );
   });
+  lines.push('');
+
+  // 4. Chronological Event Log & Threshold Alerts
+  lines.push('# 4. SIMULATION EVENT LOG & THRESHOLD BREACHES');
+  lines.push('EVENT_ID,WALL_CLOCK_TIME,SIMULATION_SECONDS,CATEGORY,SEVERITY,APPROACH,TITLE,DETAILS,METRIC_VALUE');
+  if (data.events && data.events.length > 0) {
+    data.events.forEach((e) => {
+      const cleanTitle = (e.title || '').replace(/"/g, '""');
+      const cleanDetails = (e.details || '').replace(/"/g, '""');
+      lines.push(
+        `${e.id},${e.wallClockTime},${e.simTimeSeconds.toFixed(1)},${e.category},${e.severity},${e.approach || 'ALL'},"${cleanTitle}","${cleanDetails}",${e.metricValue || '-'}`
+      );
+    });
+  } else {
+    lines.push('NO_EVENTS,-,0.0,NONE,info,ALL,"No Events Recorded","Simulation snapshot generated before events occurred",-');
+  }
 
   return lines.join('\n');
 }
