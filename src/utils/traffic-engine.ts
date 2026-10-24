@@ -127,6 +127,39 @@ export interface ControllerDecision {
   reason: string;
 }
 
+export interface DetectedVehicleCounts {
+  twoWheeler: number;
+  autoRickshaw: number;
+  car: number;
+  bus: number;
+  truck?: number;
+  ambulance?: number;
+}
+
+/**
+ * Calculate total PCU from heterogeneous vehicle counts (IRC: 106-1990 standard)
+ */
+export function calculateDetectedPCU(counts: DetectedVehicleCounts): number {
+  return Number(
+    (
+      (counts.twoWheeler || 0) * 0.5 +
+      (counts.autoRickshaw || 0) * 0.8 +
+      (counts.car || 0) * 1.0 +
+      (counts.bus || 0) * 3.0 +
+      (counts.truck || 0) * 1.6 +
+      (counts.ambulance || 0) * 1.2
+    ).toFixed(2)
+  );
+}
+
+/**
+ * Estimate recommended green duration from detected PCU queue demand
+ */
+export function estimateGreenDurationFromPCU(pcu: number, minGreen = 15, maxGreen = 60): number {
+  const calculated = Math.round(3 + pcu / 0.65);
+  return Math.max(minGreen, Math.min(maxGreen, calculated));
+}
+
 /**
  * Calculate total PCU for a list of vehicles.
  */

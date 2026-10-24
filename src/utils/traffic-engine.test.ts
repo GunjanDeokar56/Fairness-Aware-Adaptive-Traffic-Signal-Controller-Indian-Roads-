@@ -7,6 +7,8 @@ import {
   calculateGreenDuration,
   calculateEmissions,
   generateTelemetryCSV,
+  calculateDetectedPCU,
+  estimateGreenDurationFromPCU,
   DEFAULT_CONTROLLER_PARAMS,
   SimVehicle,
   ApproachQueueState,
@@ -190,4 +192,23 @@ test('generateTelemetryCSV produces valid structured CSV format', () => {
   assert.ok(result.includes('evt-1,10:30:15,12.5,STARVATION_BREACH,warning,East'));
   assert.ok(result.includes('"Starvation Alert: East Approach"'));
   assert.ok(result.includes('evt-2,10:30:28,25.0,PHASE_CHANGE,info,ALL'));
+});
+
+test('calculateDetectedPCU accurately computes IRC: 106-1990 weights for CCTV vision', () => {
+  // 6 bikes (0.5), 4 autos (0.8), 3 cars (1.0), 2 buses (3.0), 1 ambulance (1.2)
+  const counts = {
+    twoWheeler: 6,
+    autoRickshaw: 4,
+    car: 3,
+    bus: 2,
+    truck: 1,
+    ambulance: 1,
+  };
+  // 6*0.5 (3) + 4*0.8 (3.2) + 3*1.0 (3) + 2*3.0 (6) + 1*1.6 (1.6) + 1*1.2 (1.2) = 18.0
+  const pcu = calculateDetectedPCU(counts);
+  assert.equal(pcu, 18.0);
+
+  const greenTime = estimateGreenDurationFromPCU(pcu);
+  assert.ok(greenTime >= 15 && greenTime <= 60);
+  assert.equal(greenTime, Math.round(3 + 18.0 / 0.65)); // 31s
 });
